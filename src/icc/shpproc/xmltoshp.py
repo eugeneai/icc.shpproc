@@ -11,7 +11,8 @@ def convert(xml, shp, shapeType=shapefile.POLYGON, features={}):
     return True
 
 class GKProjection(GKConverter):
-    def shapes_convert(self, reader, writer, cfrom, cto):
+    def shapes_convert(self, reader, cfrom, cto):
+        writer=shapefile.Writer()
         self.prepare_writer(reader,writer)
         shapes=reader.shapes()
 
@@ -35,13 +36,13 @@ class GKProjection(GKConverter):
                     partTypes=feature.partTypes
 
                 writer.poly(parts=poly_list, partTypes=partTypes, shapeType=feature.shapeType)
+        return writer
 
+    def shapes_to_gk(self, reader):
+        return self.shapes_convert(reader, cfrom=WGS_84, cto=self.gk)
 
-    def shapes_to_gk(self, reader, writer):
-        return self.shapes_convert(reader, writer, cfrom=WGS_84, cto=self.gk)
-
-    def shapes_to_wgs(self, reader, writer):
-        return self.shapes_convert(reader, writer, cfrom=self.gk, cto=WGS_84)
+    def shapes_to_wgs(self, reader):
+        return self.shapes_convert(reader, cfrom=self.gk, cto=WGS_84)
 
     def prepare_writer(self, reader, writer):
         writer.shapeType=reader.shapeType

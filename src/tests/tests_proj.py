@@ -2,20 +2,43 @@ from nose.tools import *
 import pkg_resources
 from icc.shpproc import get_proj, gk_to_wgs, wgs_to_gk
 from icc.shpproc import GKProjection, convert
-import shapefile
-
+import shapefile, os
 
 def res(filename):
     return pkg_resources.resource_filename("icc.shpproc",
                                            "../../tests/data/" + filename)
 
-
 OLKHON = res("Olkhon.xml")
 B_OLKHON = res("Olkhon-beauty.xml")
+
 SHP = res("Olkhon")
 SHP_OUT = res("Olkhon-transformed")
 SHP_GRID =res("OlkhonGrid1km")
 SHP_GRID_OUT =res("OlkhonGrid1km-WGS")
+IRELAND = res("Ireland_LA_wgs.prj")
+
+def getWKT_PRJ (epsg_code):
+    from urllib.request import urlopen
+
+    with urlopen("http://spatialreference.org/ref/epsg/{}/ogcwkt/".format(epsg_code)) as wkt:
+
+        remove_spaces = wkt.read().replace(b" ",b"")
+        output = remove_spaces.replace(b"\n", b"")
+        return output
+
+def get_Ireland():
+    epsg = getWKT_PRJ("4326")
+    if epsg:
+        prj = open(IRELAND, "wb")
+        prj.write(epsg)
+        prj.close()
+    else:
+        raise RuntimeError("could not load Ireland map")
+
+try:
+    os.stat(IRELAND)
+except FileNotFoundError:
+    get_Ireland()
 
 class TestBasic:
     def setUp(self):
@@ -54,9 +77,8 @@ class TestConvertSimple:
 
     def test_project_wgs_to_gk(self):
         r=shapefile.Reader(SHP_GRID)
-        w=shapefile.Writer(SHP_GRID_OUT)
-
-        self.proj.shapes_to_wgs(r,w)
+        w=self.proj.shapes_to_wgs(r)
+        w.save(SHP_GRID_OUT)
 
 if __name__=="__main__":
     t=TestConvertSimple()
