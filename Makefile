@@ -10,7 +10,7 @@
 LPYTHON=python3
 V=$(HOME)/.pyenv/versions/qgis
 VB=$(V)/bin
-PYTHON=$(VB)/$(LPYTHON)
+
 #ROOT=$(PWD)
 #INI=icc.shpproc
 #LCAT=src/icc.shpproc/locale/
@@ -18,6 +18,12 @@ PYTHON=$(VB)/$(LPYTHON)
 #LG_DIR="link-grammar"
 #LG_LIB_DIR=$(TOP_DIR)/$(LG_DIR)/.libs
 #LG_HEADERS=$(TOP_DIR)
+
+PROJ = "PROJ_DIR=/usr/"
+
+$ENV = $(PROJ)
+
+PYTHON=$(ENV) $(VB)/$(LPYTHON)
 
 env:
 	[ -d $(V) ] || virtualenv  $(V)

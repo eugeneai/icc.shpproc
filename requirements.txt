@@ -1,4 +1,5 @@
 lxml
+numpy
 pyshp
 nose
-
+pyproj
