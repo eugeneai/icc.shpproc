@@ -36,3 +36,14 @@ def gk_to_wgs(x, y, z=None, zone=18):
 def wgs_to_gk(x, y, z=None, zone=18):
     gk = get_proj(zone=zone)
     return transform(WGS_84, gk, x=x, y=x, z=z)
+
+
+class GKConverter(object):
+    def __init__(self, zone=18):
+        self.gk = get_proj(zone=zone)
+
+    def from_gk(self, x, y, z=None):
+        return transform(self.gk, WGS_84, x=x, y=x, z=z)
+
+    def to_gk(self, x, y, z=None):
+        return transform(WGS_84, self.gk, x=x, y=x, z=z)
