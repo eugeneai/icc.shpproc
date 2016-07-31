@@ -1,6 +1,6 @@
 from lxml import etree
 import shapefile
-from icc.shpproc.proj import GKConverter, WGS_84
+from icc.shpproc.proj import GKConverter, WGS_84, get_proj
 import numpy as np
 import pyproj
 
@@ -10,8 +10,21 @@ def convert(xml, shp, shapeType=shapefile.POLYGON, features={}):
     sw.autoBalance = 1
     return True
 
-class GKProjection(GKConverter):
-    def shapes_convert(self, reader, cfrom, cto):
+class ReProjection:
+    def __init__(self, in_proj=WGS_84, to_proj=None):
+        if to_proj==None:
+            raise ValueError("a target projection must be set")
+        self.in_proj=in_proj
+        self.to_proj=to_proj
+
+    def shapes_convert(self, reader, backward=False):
+        if backward:
+            cfrom=self.to_proj
+            cto=self.in_proj
+        else:
+            cfrom=self.in_proj
+            cto=self.to_proj
+
         writer=shapefile.Writer()
         self.prepare_writer(reader,writer)
         shapes=reader.shapes()
@@ -25,6 +38,8 @@ class GKProjection(GKConverter):
             new_points[:,2:4]=points[:,2:4] # FIXME Can we project z-axis?
 
             if len(feature.parts) == 1:
+                print(points.shape)
+                print(new_points.shape)
                 writer.poly(parts=[new_points], shapeType=feature.shapeType)
             else:
 
@@ -38,11 +53,11 @@ class GKProjection(GKConverter):
                 writer.poly(parts=poly_list, partTypes=partTypes, shapeType=feature.shapeType)
         return writer
 
-    def shapes_to_gk(self, reader):
-        return self.shapes_convert(reader, cfrom=WGS_84, cto=self.gk)
+    def forward(self, reader):
+        return self.shapes_convert(reader)
 
-    def shapes_to_wgs(self, reader):
-        return self.shapes_convert(reader, cfrom=self.gk, cto=WGS_84)
+    def backward(self, reader):
+        return self.shapes_convert(reader, backward=True)
 
     def prepare_writer(self, reader, writer):
         writer.shapeType=reader.shapeType
@@ -61,3 +76,14 @@ class GKProjection(GKConverter):
         for row in records:
             args = row
             writer.record(*args)
+
+class GKProjection(ReProjection):
+    def __init__(self, zone=18):
+        ReProjection.__init__(self, WGS_84, get_proj(zone=zone))
+        self.zone=zone
+
+    def to_wgs(self, reader):
+        return self.backward(reader)
+
+    def to_gk(self, reader):
+        return self.forward(reader)

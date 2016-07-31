@@ -1,8 +1,10 @@
 from nose.tools import *
 import pkg_resources
 from icc.shpproc import get_proj, gk_to_wgs, wgs_to_gk
-from icc.shpproc import GKProjection, convert
+from icc.shpproc import GKProjection, convert, ReProjection
 import shapefile, os
+from icc.shpproc.proj import WGS_84
+from pyproj import Proj
 
 def res(filename):
     return pkg_resources.resource_filename("icc.shpproc",
@@ -16,6 +18,9 @@ SHP_OUT = res("Olkhon-transformed")
 SHP_GRID =res("OlkhonGrid1km")
 SHP_GRID_OUT =res("OlkhonGrid1km-WGS")
 IRELAND = res("Ireland_LA_wgs.prj")
+IRELAND_SHP = res("Census2011_Admin_Counties_generalised20m")
+IRELAND_SHP_OUT=res("Census2011_Admin_Counties_generalised20m_wgs")
+IRELAND_PROJ=Proj(init="epsg:29902")
 
 def getWKT_PRJ (epsg_code):
     from urllib.request import urlopen
@@ -71,14 +76,26 @@ class TestConvertSimple:
         pass
 
     def test_covert_basic(self):
-
         assert convert(OLKHON,SHP)
-
 
     def test_project_wgs_to_gk(self):
         r=shapefile.Reader(SHP_GRID)
-        w=self.proj.shapes_to_wgs(r)
+        w=self.proj.to_wgs(r)
         w.save(SHP_GRID_OUT)
+
+class TestWithIrelandData:
+    def setUp(self):
+        self.proj=ReProjection(IRELAND_PROJ, WGS_84)
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_project_ITM_WGS(self):
+        r=shapefile.Reader(IRELAND_SHP)
+        w=self.proj.forward(r)
+        w.save(IRELAND_SHP_OUT)
+
 
 if __name__=="__main__":
     t=TestConvertSimple()
