@@ -35,16 +35,19 @@ class ReProjection:
             new_points=np.zeros(points.shape, dtype=float)
 
             new_points[:,0],new_points[:,1]=pyproj.transform(cfrom, cto, x=points[:,0], y=points[:,1])
-            new_points[:,2:4]=points[:,2:4] # FIXME Can we project z-axis?
+            pshape2=points.shape[1]
+            if pshape2>2:
+                new_points[:,2:pshape2]=points[:,2:pshape2] # FIXME Can we project z-axis?
 
             if len(feature.parts) == 1:
-                print(points.shape)
-                print(new_points.shape)
-                writer.poly(parts=[new_points], shapeType=feature.shapeType)
+                #print("::",points.shape, new_points.shape)
+                #print(points[:10,:])
+                #print(new_points[:3,:])
+                writer.poly(parts=[new_points.tolist()], shapeType=feature.shapeType)
             else:
 
-                indexes = feture.parts[:]+[len(feature.points)]
-                poly_list=[new_points[a:b,:] for a,b in zip(indexes[1:], indexes[:-1])]
+                indexes = list(feature.parts[:])+[len(feature.points)]
+                poly_list=[new_points[a:b,:].tolist() for a,b in zip(indexes[:-1], indexes[1:])]
 
                 partTypes=[]
                 if feature.shapeType==shapefile.MULTIPATCH:
