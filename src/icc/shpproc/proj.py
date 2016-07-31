@@ -2,7 +2,15 @@
 from pyproj import Proj, transform
 
 WGS_84 = Proj(init="epsg:3857")
-GK_18 = Proj(init="epsg:2534")
+#WGS_84_S = Proj(proj="longlat", ellps="WGS84")
+WGS_84_S = Proj(proj="longlat", init="epsg:3857")
+#GK_18 = Proj(init="epsg:2534")
+GK_18 = Proj(init="epsg:28418")
+#http://wiki.openstreetmap.org/wiki/EPSG:3857
+#EPSG:3395
+#EPSG:7030
+
+
 
 GK_CACHE = {18: GK_18, "18": GK_18}
 

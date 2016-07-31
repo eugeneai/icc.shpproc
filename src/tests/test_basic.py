@@ -59,5 +59,5 @@ class TestConvertToSHP:
     def test_covert_basic(self):
         assert shp.wikimapia(OLKHON,SHP)
 
-    def test_convert_layers(self):
-        assert shp.wikimapia(layers=LAYERS, shp=res(""), api_key=API_KEY)
+#    def test_convert_layers(self):
+#        assert shp.wikimapia(layers=LAYERS, shp=res(""), api_key=API_KEY)

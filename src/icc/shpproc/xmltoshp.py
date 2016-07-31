@@ -38,8 +38,8 @@ class WikimapiaLoader(object):
 
     def load_from_etree(self, tree, writer, **kwargs):
         # database structure must be already set up
-        objid=int(tree.find("wm/id").text)
-        objtitle=tree.find("wm/title").text.replace("\n"," ")
+        objid=int(tree.find("id").text)
+        objtitle=tree.find("title").text.replace("\n"," ")
         polys=tree.iterfind("polygon")
         polyParts=[]
         for i, poly in enumerate(polys):
@@ -50,7 +50,7 @@ class WikimapiaLoader(object):
                 if fx==None:
                     fx=x
                     fy=y
-                poly_part.append([x,y])
+                polyPart.append([x,y])
             polyPart.append([fx,fy])
             polyParts.append(polyPart)
         writer.record(ID=objid, TITLE=objtitle, **kwargs)
@@ -108,13 +108,15 @@ class WikimapiaLoader(object):
         if writer is not None:
             writer.save(layer_name)
 
+        return True
+
     def load_from_xml(self, xml, writer):
         tree=self.parse_xml(xml)
         self.load_from_etree(tree, writer)
         return writer
 
     def setup_default_fields(self, writer):
-        writer.field("ID", "N", "3")
+        writer.field("ID", "N", "10")
         writer.field("TITLE", "C", size="100")
 
 
