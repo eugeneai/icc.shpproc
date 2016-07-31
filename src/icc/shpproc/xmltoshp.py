@@ -6,7 +6,10 @@ import pyproj
 
 def convert(xml, shp, shapeType=shapefile.POLYGON, features={}):
     tree=etree.parse(xml)
-    sw=shapefile.Writer(shapeType=shapeType)
+    if type(shp) == str:
+        sw=shapefile.Writer(shapeType=shapeType)
+    else:
+        sw=shp
     sw.autoBalance = 1
     sw.field("ID", "N", "3")
     polys=tree.iterfind("polygon")
@@ -25,8 +28,11 @@ def convert(xml, shp, shapeType=shapefile.POLYGON, features={}):
         ll.append(l)
 
     sw.poly(parts=ll, shapeType=3)
-    sw.save(target=shp)
-    return fx!=None
+    if type(shp)==str:
+        sw.save(target=shp)
+        return fx!=None
+    else:
+        return sw
 
 class ReProjection:
     def __init__(self, in_proj=WGS_84, to_proj=None):
