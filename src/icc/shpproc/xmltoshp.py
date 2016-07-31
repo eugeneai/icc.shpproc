@@ -24,6 +24,10 @@ def convert(xml, shp, shapeType=shapefile.POLYGON, features={}):
         sw.record(ID=i)
         ll.append(l)
 
+    sw.poly(parts=ll, shapeType=3)
+    sw.save(target=shp)
+    return fx!=None
+
 class ReProjection:
     def __init__(self, in_proj=WGS_84, to_proj=None):
         if to_proj==None:
