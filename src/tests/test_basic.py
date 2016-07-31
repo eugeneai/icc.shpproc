@@ -12,9 +12,9 @@ def res(filename):
 OLKHON=res("Olkhon.xml")
 B_OLKHON=res("Olkhon-beauty.xml")
 SHP=res("Olkhon")
-API_KEY="36C85854-8B2CB53B-C2FA4526-45F47111-0B87CFD5-9DEFE93F-49743DDD-2AE78978"
 
-HTTP_Q="http://api.wikimapia.org/?key={api_key}&id={id}&function=place.getbyid"
+API_KEY="36C85854-8B2CB53B-C2FA4526-45F47111-0B87CFD5-9DEFE93F-49743DDD-2AE78978"
+LAYERS=res("wikimapia_olkhon.txt")
 
 class TestBasic:
 
@@ -57,4 +57,7 @@ class TestConvertToSHP:
         pass
 
     def test_covert_basic(self):
-        assert shp.convert(OLKHON,SHP)
+        assert shp.wikimapia(OLKHON,SHP)
+
+    def test_convert_layers(self):
+        assert shp.wikimapia(layers=LAYERS, shp=res(""), api_key=API_KEY)

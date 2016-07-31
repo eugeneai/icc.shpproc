@@ -3,36 +3,124 @@ import shapefile
 from icc.shpproc.proj import GKConverter, WGS_84, get_proj
 import numpy as np
 import pyproj
+import os.path
 
-def convert(xml, shp, shapeType=shapefile.POLYGON, features={}):
-    tree=etree.parse(xml)
-    if type(shp) == str:
-        sw=shapefile.Writer(shapeType=shapeType)
-    else:
-        sw=shp
-    sw.autoBalance = 1
-    sw.field("ID", "N", "3")
-    polys=tree.iterfind("polygon")
-    ll=[]
-    for i, poly in enumerate(polys):
-        fx=fy=None
-        l=[]
-        for x,y in zip(poly.iterfind("*/x"),poly.iterfind("*/y")):
-            x,y=map(float, [x.text,y.text])
-            if fx==None:
-                fx=x
-                fy=y
-            l.append([x,y])
-        l.append([fx,fy])
-        sw.record(ID=i)
-        ll.append(l)
+HTTP_Q="http://api.wikimapia.org/?key={api_key}&id={id}&function=place.getbyid"
 
-    sw.poly(parts=ll, shapeType=3)
-    if type(shp)==str:
-        sw.save(target=shp)
-        return fx!=None
-    else:
-        return sw
+class WikimapiaLoader(object):
+    """Loads shapes from wikimapia and constructs shapes.
+    """
+
+    def __init__(self, xml=None, shp=None, layers=None, shapeType=shapefile.POLYGON, features=None, api_key=None):
+        """
+        """
+        self.api_key=api_key
+        self.shapeType=shapeType
+        self.layers=layers
+        self.shp=shp
+        self.xml=xml
+        if features != None:
+            self.features=features
+        else:
+            self.default_features()
+
+    def default_features(self):
+        self.features=("id","title")
+
+    def parse_xml(self, xml):
+        return etree.parse(xml)
+
+    def parse_by_id(self, id):
+        if self.api_key==None:
+            raise RuntimeError("api key did not set up")
+        URL=HTTP_Q.format(api_key=self.api_key, id=id)
+        return self.parse_xml(URL)
+
+    def load_from_etree(self, tree, writer, **kwargs):
+        # database structure must be already set up
+        objid=int(tree.find("wm/id").text)
+        objtitle=tree.find("wm/title").text.replace("\n"," ")
+        polys=tree.iterfind("polygon")
+        polyParts=[]
+        for i, poly in enumerate(polys):
+            fx=fy=None
+            polyPart=[]
+            for x,y in zip(poly.iterfind("*/x"),poly.iterfind("*/y")):
+                x,y=map(float, [x.text,y.text])
+                if fx==None:
+                    fx=x
+                    fy=y
+                poly_part.append([x,y])
+            polyPart.append([fx,fy])
+            polyParts.append(polyPart)
+        writer.record(ID=objid, TITLE=objtitle, **kwargs)
+
+        if len(polyParts)>1:
+            writer.poly(parts=polyParts, shapeType=shapefile.MULTIPOINT,
+                    partTypes=[shapefile.POLYGON]*len(polyParts))
+        else:
+            writer.poly(parts=polyParts, shapeType=shapefile.POLYGON)
+
+    def load(self, target=None):
+        if self.layers is not None:
+            if type(self.shp) is not str:
+                raise ValueError("shp must be a directory name, a string")
+            #if target is None:
+            #    raise ValueError("target directory is not specified")
+            return self.load_layers(self.layers, self.shp)
+
+        if type(self.shp) is str:
+            writer=shapefile.Writer()
+            self.setup_default_fields(writer)
+        else:
+            writer=self.shp
+        self.load_from_xml(self.xml, writer)
+        if type(self.shp) is not str:
+            writer.save(self.shp)
+        return writer
+
+    def load_layers(self, layers, shp):
+        script=open(layers, "r")
+        writer=None
+        template=HTTP_Q
+        layer_name=""
+        for line in script:
+            line=line.strip()
+            if line.startswith("#"):
+                if writer is not None:
+                    writer.save(layer_name)
+                layer_name=line[1:].strip().replace(" ","_")
+                layer_name=os.path.join(shp, layer_name)
+                writer=shapefile.Writer()
+                self.setup_default_fields(writer)
+                writer.field("NAME")
+                continue
+            elif line.startswith("http"):
+                template=line
+                continue
+
+            objid, name=line.split(" ", maxsplit=1)
+
+            tree=self.parse_by_id(int(objid))
+
+            self.load_from_etree(tree, writer, NAME=name)
+
+        if writer is not None:
+            writer.save(layer_name)
+
+    def load_from_xml(self, xml, writer):
+        tree=self.parse_xml(xml)
+        self.load_from_etree(tree, writer)
+        return writer
+
+    def setup_default_fields(self, writer):
+        writer.field("ID", "N", "3")
+        writer.field("TITLE", "C", size="100")
+
+
+def wikimapia(xml=None, shp=None, layers=None, shapeType=shapefile.POLYGON, features=None, api_key=None, target=None):
+    wm=WikimapiaLoader(xml=xml, shp=shp, layers=layers, shapeType=shapeType, features=features, api_key=api_key)
+    return wm.load()
 
 class ReProjection:
     def __init__(self, in_proj=WGS_84, to_proj=None):

@@ -1,5 +1,0 @@
-http://api.wikimapia.org/?key={api_key}&function=place.getbyid&id={id}
-1601 Хужир 
-7280879 Ольхон 
-12080867 Харанцы 
-33578870 Сарайский пляж 

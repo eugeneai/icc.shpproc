@@ -1,0 +1,8 @@
+http://api.wikimapia.org/?key={api_key}&function=place.getbyid&id={id}
+# island
+7280879 Ольхон
+# shore
+33578870 Сарайский пляж
+# populated locality
+12080867 Харанцы
+1601 Хужир
