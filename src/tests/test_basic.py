@@ -12,8 +12,9 @@ def res(filename):
 OLKHON=res("Olkhon.xml")
 B_OLKHON=res("Olkhon-beauty.xml")
 SHP=res("Olkhon")
+API_KEY="36C85854-8B2CB53B-C2FA4526-45F47111-0B87CFD5-9DEFE93F-49743DDD-2AE78978"
 
-HTTP_Q="http://api.wikimapia.org/?key=36C85854-8B2CB53B-C2FA4526-45F47111-0B87CFD5-9DEFE93F-49743DDD-2AE78978&id=7280879&function=place.getbyid"
+HTTP_Q="http://api.wikimapia.org/?key={api_key}&id={id}&function=place.getbyid"
 
 class TestBasic:
 
