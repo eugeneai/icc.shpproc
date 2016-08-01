@@ -1,7 +1,7 @@
 from nose.tools import *
 import pkg_resources
 from icc.shpproc import get_proj, gk_to_wgs, wgs_to_gk
-from icc.shpproc import GKProjection, wikimapia, ReProjection
+from icc.shpproc import GKProjection, wikimapia, ReProjection, PointGenerator
 import shapefile, os
 from icc.shpproc.proj import WGS_84, WGS_84_S, GK_18
 from pyproj import Proj
@@ -117,6 +117,18 @@ class TestWithOlkhonData1:
         w=self.proj.forward(r)
         w.save(AREALS+"-GK18")
 
+
+class TestGridGenerator:
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_simple_point_grid_generator(self):
+        gg=PointGenerator(AREALS, 1000, target=AREALS+"-grid")
+        rc=gg.generate()
+        assert rc
 
 if __name__=="__main__":
     t=TestConvertSimple()

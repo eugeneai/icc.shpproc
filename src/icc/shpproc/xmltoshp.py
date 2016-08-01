@@ -4,6 +4,8 @@ from icc.shpproc.proj import GKConverter, WGS_84, get_proj
 import numpy as np
 import pyproj
 import os.path
+import itertools
+import matplotlib.path as mplPath
 
 HTTP_Q="http://api.wikimapia.org/?key={api_key}&id={id}&function=place.getbyid"
 
@@ -204,3 +206,88 @@ class GKProjection(ReProjection):
 
     def to_gk(self, reader):
         return self.forward(reader)
+
+class PointGenerator(object):
+    def __init__(self, source, stepx, stepy=None, rond=True, envelope=False, target=None):
+        self.stepx=stepx
+        if stepy is None:
+            stepy=stepx
+        self.stepy=stepy
+        if target is None:
+            self.writer=shapefile.Writer(shapeType=shapefile.POINT)
+            self.prepare(self.writer)
+        else:
+            self.writer=target
+
+        if type(source)==str:
+            self.reader=shapefile.Reader(source)
+        else:
+            self.reader=source
+
+        self.source=source
+        self.target=target
+
+    def generate(self):
+        grid=set()
+        for feature in self.reader.shapes():
+            self.gen_for_feature(feature, grid)
+        if grid:
+            if type(self.target)==str:
+                writer=shapefile.Writer(shapeType=shapefile.POINT)
+                self.prepare(writer)
+            else:
+                writer=self.writer
+            for i,p in enumerate(grid):
+                x,y=p
+                writer.point(x=x,y=y)
+                writer.record(ID=i, ID_SHAPE=-1, LONGLAT="___, __", COORD="{}, {}".format(x,y))
+            writer.save(self.target)
+        return grid
+
+    def gen_for_feature(self, feature, grid):
+        if feature.shapeType not in [3, 5, 13, 15, 23, 25, 28, 31]:
+            raise ValueError("feature is not polyline neither polygon")
+        points=np.array(feature.points)
+        if feature.parts==1:
+            self.gen_for_points(points, grid)
+        else:
+            index=feature.parts[:]
+            index.append(len(feature.points))
+            for a,b in zip(index[:-1], index[1:]):
+                self.gen_for_points(points[a:b], grid)
+
+    def gen_for_points(self, points, grid):
+        def rnd(v, g, app=0):
+            """Rounds to a mesh.
+            If app is 0 then the left point of the mesh is taken.
+            If app is 1 the right point taken.
+            If app is 0.5 then nearest is taken.
+            """
+            vv=int(v)
+            gv=int(v/g)*g
+            if vv==gv:
+                return gv
+            else:
+                if app==0:
+                    return gv
+                if app==1:
+                    return gv+g
+                gv=int(v/grid+app)*g
+
+        sx,sy=self.stepx,self.stepy
+        mi=np.amin(points,0)
+        ma=np.amax(points,0)
+        mi[0],mi[1]=rnd(mi[0], sx), rnd(mi[1], sy)
+        ma[0],ma[1]=rnd(ma[0], sx, app=1), rnd(ma[1], sy, app=1)
+        ma=ma.astype(int)
+        mi=mi.astype(int)
+        poly=mplPath.Path(points)
+        for x,y in itertools.product(range(mi[0], ma[0], sx), range(mi[1],ma[1],sy)):
+            if poly.contains_point((x,y)):
+                grid.add((x,y))
+
+    def prepare(self, writer):
+        writer.field("ID", "N", size=5)
+        writer.field("ID_SHAPE", "N", size=5)
+        writer.field("LONGLAT", size=50)
+        writer.field("COORD", size=50)
