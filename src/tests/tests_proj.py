@@ -126,7 +126,13 @@ class TestGridGenerator:
         pass
 
     def test_simple_point_grid_generator(self):
-        gg=PointGenerator(AREALS, 1000, target=AREALS+"-grid")
+        gg=PointGenerator(AREALS, 1000, target=AREALS+"-grid-regular", envelope=True)
+        rc=gg.generate()
+        assert rc
+
+    def test_simple_point_grid_generator_sript_test(self):
+        gg=PointGenerator(AREALS, target=AREALS+"-grid", envelope=True,
+                          coords=WGS_84_S, proj=GK_18, diff=(53,107))
         rc=gg.generate()
         assert rc
 
