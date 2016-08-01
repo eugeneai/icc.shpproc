@@ -5,6 +5,7 @@ from icc.shpproc import GKProjection, wikimapia, ReProjection, PointGenerator
 import shapefile, os
 from icc.shpproc.proj import WGS_84, WGS_84_S, GK_18
 from pyproj import Proj
+from lxml import etree
 
 def res(filename):
     return pkg_resources.resource_filename("icc.shpproc",
@@ -131,10 +132,17 @@ class TestGridGenerator:
         assert rc
 
     def test_simple_point_grid_generator_sript_test(self):
-        gg=PointGenerator(AREALS, target=AREALS+"-grid", envelope=True,
-                          coords=WGS_84_S, proj=GK_18, diff=(53,107))
+        target=AREALS+"-grid"
+        gg=PointGenerator(AREALS, target=target, envelope=True,
+                          coords=WGS_84_S, proj=GK_18)
         rc=gg.generate()
         assert rc
+        gg.gpx.write(target+".gpx", encoding="utf-8", method="xml",
+                     pretty_print=True, xml_declaration=True,
+                     with_tail=False,
+                     standalone=False, compression=0,
+                     exclusive=False, with_comments=True, inclusive_ns_prefixes=None)
+
 
 if __name__=="__main__":
     t=TestConvertSimple()

@@ -260,6 +260,7 @@ class PointGenerator(object):
                  coords=None,   # Add coordinate data to the generated layer database in the coords projection
                  proj=None,     # Original projection (which points generated in)
                  diff=(0,0),    # This values are subtracted from coords to be shown, reducing amount of info to be printed
+                 only_local_part=True,  #Show in data only local (.#####) part of the coordinate
     ):
         self.stepx = stepx
         if stepy is None:
@@ -295,6 +296,40 @@ class PointGenerator(object):
         return self.save(grid)
 
     def save(self, grid):
+        grid=list(grid)
+        grid.sort()
+        NSMAP={
+            None:"http://www.topografix.com/GPX/1/1",
+        }
+        gpx=etree.Element("gpx", nsmap=NSMAP)
+        tree=etree.ElementTree(element=gpx)
+        gpx.set("creator","https://github.com/eugeneai/icc.shpproc/blob/master/src/icc/shpproc/xmltoshp.py#PointGenerator")
+        gpx.set("{http://www.w3.org/2001/XMLSchema-instance}schemaLocation", "http://www.topografix.com/GPX/1/1 \
+        http://www.topografix.com/GPX/1/1/gpx.xsd \
+        http://www.garmin.com/xmlschemas/GpxExtensions/v3 \
+        http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd \
+        http://www.garmin.com/xmlschemas/WaypointExtension/v1 \
+        http://www8.garmin.com/xmlschemas/WaypointExtensionv1.xsd \
+        http://www.garmin.com/xmlschemas/TrackPointExtension/v1 \
+        http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd")
+        md=etree.SubElement(gpx,"metadata")
+        l=etree.SubElement(md,"link", href="http://www.garmin.com")
+        text=etree.SubElement(l,"text")
+        text.text="Garmin International"
+        etree.SubElement(md,"time").text="2016-08-01T01:22:18Z"
+        def save_point(x,y,name, ele=None, sym=None, gpx=gpx, time=None):
+            wpt=etree.SubElement(gpx, "wpt", lat="{:-9.6f}".format(y), lon="{:-10.6f}".format(x))
+            if ele:
+                etree.SubElement(wpt,"ele").text=str(ele)
+            if time:
+                etree.SubElement(wpt,"time").text=time
+            etree.SubElement(wpt,"name").text=name
+            esym=etree.SubElement(wpt,"sym").text="Flag, Blue"
+            if sym:
+                esym.text=sym
+        self.gpx=tree
+
+        serial=301
         if grid:
             if type(self.target) == str:
                 writer = shapefile.Writer(shapeType=shapefile.POINT)
@@ -305,14 +340,23 @@ class PointGenerator(object):
                 x, y = p
                 writer.point(x=x, y=y)
                 LONGLAT=""
+                LOCAL=""
                 if self.coords:
                     px,py=pyproj.transform(self.proj,self.coords, x=x, y=y)
                     # LONGLAT="{}-{}".format(as_grad(px-self.diff[0]), as_grad(py-self.diff[1]))
                     LONGLAT="{:05.0f}-{:05.0f}".format((py-self.diff[0])*100000, (px-self.diff[1])*100000)
+                    dpy=py-int(py)
+                    dpx=px-int(px)
+                    LOCAL="{:05.0f}-{:05.0f}".format(dpy*100000, dpx*100000)
+                    lat=py
+                    long=px
+                    save_point(x=px, y=py, name="z{:03d}".format(serial), ele=455, time="2016-08-01T01:22:18Z")
+                    serial+=1
                 writer.record(
                     ID=i,
                     ID_SHAPE=-1,
                     LONGLAT=LONGLAT,
+                    LOCAL=LOCAL,
                     COORD="{}, {}".format(x, y))
             writer.save(self.target)
         else:
@@ -418,4 +462,5 @@ class PointGenerator(object):
         writer.field("ID", "N", size=5)
         writer.field("ID_SHAPE", "N", size=5)
         writer.field("LONGLAT", size=50)
+        writer.field("LOCAL", size=50)
         writer.field("COORD", size=50)
