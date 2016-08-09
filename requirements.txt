@@ -4,3 +4,4 @@ pyshp
 nose
 pyproj
 matplotlib
+reportlab
