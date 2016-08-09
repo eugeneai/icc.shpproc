@@ -40,7 +40,7 @@ def label(code,c,x,y):
 
     renderPDF.draw(d, c, xx+bx, yy+by)   # Ajustenment is -1mm, -3mm
     #c.roundRect(xx0+xx, yy0+yy, 20*mx, 20*my, 1*mx, stroke=1, fill=0)
-    #c.roundRect(xx0+xx, yy0+yy, 48*mx, 20*my, 1*mx, stroke=1, fill=0)
+    c.roundRect(xx0+xx, yy0+yy, 49*mx, 20*my, 1*mx, stroke=1, fill=0)
     textobject = c.beginText()
     dx=xx0+20*mx
     dy=yy0+13*my
@@ -68,7 +68,7 @@ def label(code,c,x,y):
 
 def probegen(numlen=4):
     C=choice
-    num=0
+    num=400
     for p,count in zip(PLACE,[78,130,130]):  # zip(PLACE,[70,110,110]):
         while count>0:
             for m in MEDIA:
