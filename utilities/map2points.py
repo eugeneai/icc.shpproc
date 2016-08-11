@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import os, os.path, sys
+import os.path
+import sys
 
 USAGE = """{argv0} <input-file-name>.map [<output-file-name>.points]
 """
